@@ -1,0 +1,157 @@
+{% extends 'app/base.html' %}
+
+{% block content %}
+<style>
+    /* Container and header styling */
+    .countdown-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin: 20px;
+    }
+
+    h2 {
+        font-size: 2em;
+        color: #2c3e50;
+        margin-bottom: 20px;
+        text-align: center;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        border-bottom: 3px solid #3498db;
+        padding-bottom: 10px;
+    }
+
+    .admin-link {
+        text-align: center;
+        font-size: 1em;
+        margin-top: 20px;
+        color: #2980b9;
+    }
+
+    .admin-link a {
+        color: #2980b9;
+        text-decoration: none;
+        font-weight: bold;
+    }
+
+    .admin-link a:hover {
+        text-decoration: underline;
+        color: #3498db;
+    }
+
+    /* Countdown card styling */
+    .countdown {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background-color: #ecf0f1;
+        border-radius: 10px;
+        padding: 25px;
+        margin: 15px 0;
+        width: 100%;
+        max-width: 400px;
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        transition: transform 0.3s ease;
+    }
+
+    .countdown:hover {
+        transform: scale(1.03);
+    }
+
+    /* Countdown title styling */
+    .countdown-title {
+        font-size: 1.8em;
+        color: #34495e;
+        margin-bottom: 15px;
+        text-align: center;
+        text-transform: capitalize;
+    }
+
+    /* Countdown time display styling */
+    .countdown-status {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        font-size: 1.2em;
+        color: #3498db;
+    }
+
+    .countdown-status span {
+        font-weight: bold;
+        color: #2c3e50;
+    }
+
+    #days,
+    #hours,
+    #minutes,
+    #seconds {
+        font-size: 1.4em;
+    }
+
+    /* "Closed" countdown status styling */
+    .countdown-status.closed {
+        color: #e74c3c;
+        font-weight: bold;
+    }
+</style>
+
+<div class="countdown-container">
+    {% if not objs.count %}
+    <div>No countdowns were created!</div>
+    <div class="admin-link">
+        Go to the <a href={% url 'admin:app_counter_add' %}>admin panel</a> to create countdown for events.
+    </div>
+    {% else %}
+    <h2>Upcoming Events</h2>
+    {% for obj in objs %}
+    <div class="countdown">
+        <h3 class="countdown-title countdown-title-{{ obj.pk }}">{{ obj }}</h3>
+        <div class="countdown-status countdown-status-{{ obj.pk }}">
+            <span id="days">0</span> Days
+            <span id="hours">00</span> Hours
+            <span id="minutes">00</span> Minutes
+            <span id="seconds">00</span> Seconds
+        </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+</div>
+
+<script>
+    makeTimer = (endTimeSeconds, pk) => {
+        let endTime = new Date(endTimeSeconds * 1000);
+        endTime = (Date.parse(endTime) / 1000);
+
+        let now = new Date();
+        now = (Date.parse(now) / 1000);
+
+        let timeLeft = endTime - now;
+
+        let countdownStatus = document.querySelector(`.countdown-status-${pk}`);
+
+        if (timeLeft <= 0) {
+            countdownStatus.classList.add("closed");
+            countdownStatus.textContent = "CLOSED!";
+            return;
+        }
+
+        let days = Math.floor(timeLeft / 86400);
+        let hours = Math.floor((timeLeft - (days * 86400)) / 3600);
+        let minutes = Math.floor((timeLeft - (days * 86400) - (hours * 3600)) / 60);
+        let seconds = Math.floor((timeLeft - (days * 86400) - (hours * 3600) - (minutes * 60)));
+
+        if (hours < 10) { hours = "0" + hours; }
+        if (minutes < 10) { minutes = "0" + minutes; }
+        if (seconds < 10) { seconds = "0" + seconds; }
+
+        countdownStatus.querySelector("#days").textContent = days;
+        countdownStatus.querySelector("#hours").textContent = hours;
+        countdownStatus.querySelector("#minutes").textContent = minutes;
+        countdownStatus.querySelector("#seconds").textContent = seconds;
+    }
+
+    {% for obj in objs %}
+    setInterval(() => makeTimer("{{ obj.date|date:'U' }}", {{ obj.pk }}), 1000);
+    {% endfor %}
+</script>
+{% endblock content %}
